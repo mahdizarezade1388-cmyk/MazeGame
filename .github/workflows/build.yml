@@ -1,0 +1,32 @@
+name: Build Android APK
+on: [push]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential ccache git libffi-dev libssl-dev python3-dev zip unzip openjdk-17-jdk
+          pip install buildozer cython==0.29.33
+
+      - name: Build APK
+        run: |
+          buildozer init
+          sed -i 's/requirements = python3,kivy/requirements = python3,kivy/g' buildozer.spec
+          buildozer -v android debug
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v3
+        with:
+          name: MazeGame-APK
+          path: bin/*.apk
+          
