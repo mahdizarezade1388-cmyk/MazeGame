@@ -1,21 +1,37 @@
-[app]
-title = MazeGame
-package.name = mazegame
-package.domain = org.test
-source.dir = .
-source.include_exts = py,png,jpg,kv,atlas
-version = 0.1
-requirements = python3,kivy
-orientation = portrait
-fullscreen = 1
-android.archs = arm64-v8a
+name: Build Android APK
+on: [push]
 
-# نسخه دقیق SDK و Build-Tools برای جلوگیری از دانلود نسخه ناپایدار 37
-android.api = 33
-android.minapi = 24
-android.build_tools_version = 34.0.0
-android.accept_sdk_license = True
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
 
-[buildozer]
-log_level = 2
-warn_on_root = 1
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential ccache git libffi-dev libssl-dev python3-dev zip unzip openjdk-17-jdk
+          pip install --upgrade pip
+          pip install buildozer cython==0.29.33 kivy
+
+      - name: Accept All Android Licenses
+        run: |
+          mkdir -p ~/.android
+          touch ~/.android/repositories.cfg
+          yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || true
+
+      - name: Build APK with Buildozer
+        run: |
+          buildozer android debug
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: MazeGame-APK
+          path: bin/*.apk
+          
